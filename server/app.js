@@ -3,15 +3,20 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
+const dns = require('dns');
 require('dotenv').config();
+
+if (dns.getServers().every((server) => server === '127.0.0.1' || server === '::1')) {
+  dns.setServers(['1.1.1.1', '8.8.8.8']);
+}
 
 // Log startup configuration
 console.log('Server starting with configuration:', {
   nodeEnv: process.env.NODE_ENV,
-  adminEmail: process.env.ADMIN_EMAIL,
+  adminEmail: process.env.ADMIN_EMAIL ? 'Set' : 'Missing',
   mongoUri: process.env.MONGO_URI ? 'Set' : 'Missing',
   port: process.env.PORT || 5000,
-  clientUrl: process.env.CLIENT_URL || 'https://silentauctionapp-4ca96.web.app'
+  clientUrl: process.env.CLIENT_URL ? 'Set' : 'Using default'
 });
 
 const app = express();
