@@ -73,7 +73,7 @@
 .auction-items-container {
   display: grid;
   gap: 1.25rem;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 0 auto;
   max-width: 1280px;
   width: 100%;
@@ -98,6 +98,18 @@
 
 .empty-state p {
   margin: 0;
+}
+
+@media (min-width: 1280px) {
+  .auction-items-container {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .auction-items-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 680px) {
