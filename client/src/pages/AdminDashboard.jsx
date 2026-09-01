@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../api";
+import Button from "../components/Button";
+import PriceDisplay from "../components/PriceDisplay";
+import StatusBadge from "../components/StatusBadge";
 import styles from "./AdminDashboard.module.css";
 
 export default function AdminDashboard() {
@@ -117,20 +120,29 @@ export default function AdminDashboard() {
     }));
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className={styles["admin-loading"]}>Loading dashboard...</div>;
 
   return (
     <div className={styles["admin-bg"]}>
       <div className={styles["admin-header"]}>
-        <h1 className={styles["admin-title"]}>Admin Dashboard</h1>
+        <div>
+          <h1 className={styles["admin-title"]}>Admin Dashboard</h1>
+          <p className={styles["admin-subtitle"]}>Manage auction items and monitor activity</p>
+        </div>
+        {!showForm && (
+          <Button type="button" onClick={() => setShowForm(true)}>
+            + Add New Item
+          </Button>
+        )}
       </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className={styles["admin-form"]}>
           <div className={styles["admin-form-grid"]}>
             <div>
-              <label className={styles["admin-form-label"]}>Title</label>
+              <label className={styles["admin-form-label"]} htmlFor="title">Title</label>
               <input
+                id="title"
                 type="text"
                 name="title"
                 value={newItem.title}
@@ -140,8 +152,9 @@ export default function AdminDashboard() {
               />
             </div>
             <div>
-              <label className={styles["admin-form-label"]}>Image URL</label>
+              <label className={styles["admin-form-label"]} htmlFor="imageUrl">Image URL</label>
               <input
+                id="imageUrl"
                 type="url"
                 name="imageUrl"
                 value={newItem.imageUrl}
@@ -151,8 +164,9 @@ export default function AdminDashboard() {
               />
             </div>
             <div>
-              <label className={styles["admin-form-label"]}>Base Price ($)</label>
+              <label className={styles["admin-form-label"]} htmlFor="basePrice">Base Price</label>
               <input
+                id="basePrice"
                 type="number"
                 name="basePrice"
                 value={newItem.basePrice}
@@ -164,8 +178,9 @@ export default function AdminDashboard() {
               />
             </div>
             <div>
-              <label className={styles["admin-form-label"]}>End Date</label>
+              <label className={styles["admin-form-label"]} htmlFor="endDate">End Date</label>
               <input
+                id="endDate"
                 type="datetime-local"
                 name="endDate"
                 value={newItem.endDate}
@@ -174,9 +189,10 @@ export default function AdminDashboard() {
                 required
               />
             </div>
-            <div>
-              <label className={styles["admin-form-label"]}>Description</label>
+            <div className={styles["admin-form-wide"]}>
+              <label className={styles["admin-form-label"]} htmlFor="description">Description</label>
               <textarea
+                id="description"
                 name="description"
                 value={newItem.description}
                 onChange={handleChange}
@@ -187,70 +203,71 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className={styles["admin-form-actions"]}>
-            <button
-              type="submit"
-              className={styles["admin-btn"]}
-            >
-              Create Auction Item
-            </button>
-            <button
+            <Button
               type="button"
               onClick={() => setShowForm(false)}
-              className={styles["admin-btn"]}
-              style={{ marginLeft: '1rem', background: '#ccc', color: '#333' }}
+              variant="secondary"
             >
               Cancel
-            </button>
+            </Button>
+            <Button type="submit">
+              Create Auction Item
+            </Button>
           </div>
         </form>
       )}
 
-      <table className={styles["admin-table"]}>
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Highest Bid</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map(item => (
-            <tr key={item._id}>
-              <td>{item.title}</td>
-              <td>${item.currentPrice || item.basePrice}</td>
-              <td>{item.isClosed ? "Closed" : "Open"}</td>
-              <td>
-                {!item.isClosed && (
-                  <button
-                    onClick={() => closeAuction(item._id)}
-                    className={`${styles["admin-action-btn"]} ${styles["close"]}`}
-                  >
-                    Close
-                  </button>
-                )}
-                <button
-                  onClick={() => deleteAuction(item._id)}
-                  className={`${styles["admin-action-btn"]} ${styles["delete"]}`}
-                >
-                  Delete
-                </button>
-              </td>
+      <div className={styles["table-card"]}>
+        <table className={styles["admin-table"]}>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Highest Bid</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {!showForm && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
-          <button
-            onClick={() => setShowForm(true)}
-            className={styles["admin-btn"]}
-          >
-            Add New Item
-          </button>
-        </div>
-      )}
+          </thead>
+          <tbody>
+            {items.map(item => (
+              <tr key={item._id}>
+                <td data-label="Item">
+                  <div className={styles["item-cell"]}>
+                    {item.imageUrl && (
+                      <img src={item.imageUrl} alt="" className={styles["item-thumb"]} />
+                    )}
+                    <span>{item.title}</span>
+                  </div>
+                </td>
+                <td data-label="Highest Bid"><PriceDisplay value={item.currentPrice || item.basePrice} /></td>
+                <td data-label="Status"><StatusBadge isClosed={item.isClosed} /></td>
+                <td data-label="Actions">
+                  <div className={styles["actions"]}>
+                    {!item.isClosed && (
+                      <Button
+                        type="button"
+                        variant="warning"
+                        onClick={() => closeAuction(item._id)}
+                      >
+                        Close
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="danger"
+                      onClick={() => deleteAuction(item._id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {items.length === 0 && (
+          <div className={styles["empty-admin"]}>No auction items have been created yet.</div>
+        )}
+      </div>
     </div>
   );
 }

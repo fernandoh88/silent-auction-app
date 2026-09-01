@@ -8,14 +8,17 @@ export default function Navbar() {
   return (
     <nav className={styles.nav}>
       <div className={styles.logo}>
-        <Link to="/">Silent Auction</Link>
+        <Link to="/" aria-label="Silent Auction home">
+          <span className={styles.logoMark} aria-hidden="true">⌘</span>
+          <span>Silent Auction</span>
+        </Link>
       </div>
       <div className={styles.links}>
+        <span className={styles.email}>{currentUser?.email}</span>
         {isAdmin && (
-          <Link to="/admin">Admin</Link>
+          <Link className={styles.adminLink} to="/admin">Admin</Link>
         )}
-        <span>{currentUser?.email}</span>
-        <button onClick={logout}>Logout</button>
+        <button className={styles.logout} onClick={logout}>Logout</button>
       </div>
     </nav>
   );

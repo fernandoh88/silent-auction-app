@@ -55,7 +55,7 @@ export default function Register() {
               value={form.email}
               onChange={handleChange}
               required
-              style={{ width: '100%', padding: '0.7rem 1rem', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '1rem', outline: 'none', boxShadow: '0 2px 8px rgba(44,62,80,0.04)', marginBottom: '0.2rem' }}
+              className={styles["auth-input"]}
             />
           </div>
           <div style={{ marginBottom: '1.2rem' }}>

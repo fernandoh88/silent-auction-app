@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api";
-import { Link } from "react-router-dom";
+import AuctionCard from "../components/AuctionCard";
 import styles from "./AuctionList.module.css";
 
 function TimeLeft({ endTime, onEnd }) {
@@ -45,19 +45,7 @@ function TimeLeft({ endTime, onEnd }) {
     return () => clearInterval(timer);
   }, [endTime, onEnd]);
 
-  return (
-    <div className="my-2 p-2 bg-gray-50 rounded text-center">
-      <span className="font-semibold">Time Remaining:</span><br />
-      <span className={`
-        ${timeLeft === 'Auction ended' ? 'text-red-600' : 
-          timeLeft === 'Time not set' || timeLeft === 'Invalid date' ? 'text-gray-600' :
-          'text-blue-600'
-        } font-bold text-lg`}
-      >
-        {timeLeft}
-      </span>
-    </div>
-  );
+  return timeLeft;
 }
 
 export default function AuctionList() {
@@ -126,55 +114,35 @@ export default function AuctionList() {
 
   return (
     <div className={styles["auction-bg"]}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+      <section className={styles["auction-hero"]}>
         <h1 className={styles["auction-title"]}>Auction Items</h1>
-        <input
-          type="text"
-          placeholder="Search items..."
-          className={styles["search-input"]}
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-      </div>
+        <p className={styles["auction-subtitle"]}>Browse and bid on exclusive items</p>
+        <label className={styles["search-wrap"]}>
+          <span className={styles["search-label"]}>Search items</span>
+          <span className={styles["search-icon"]} aria-hidden="true">⌕</span>
+          <input
+            type="search"
+            placeholder="Search items..."
+            className={styles["search-input"]}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </label>
+      </section>
       <div className={styles["auction-items-container"]}>
-        {filteredItems.map((item, idx) => (
-          <div key={item._id + '-wrapper'} className={styles["auction-item-wrapper"]}>
-            <div className={styles["auction-item-card"]}>
-              <h2 className={styles["auction-item-title"]}>{item.title}</h2>
-              <img
-                src={item.imageUrl}
-                alt={item.title}
-                style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '8px', marginBottom: '1rem' }}
-              />
-              <p className={styles["auction-item-description"]}>{item.description}</p>
-              <p className={styles["auction-item-price"]}>
-                Current Bid: <strong>${item.currentPrice || item.basePrice}</strong>
-              </p>
-              <p className={styles["auction-item-status"]}>Status: {item.isClosed ? "Closed" : "Open"}</p>
-              <TimeLeft endTime={item.endDate} />
-              <div className={styles["auction-item-actions"]}>
-                {item.isClosed ? (
-                  <Link
-                    to={`/item/${item._id}`}
-                    className="btn-primary"
-                  >
-                    View Details
-                  </Link>
-                ) : (
-                  <button
-                    className="btn-bid"
-                    onClick={() => window.location.href = `/item/${item._id}`}
-                  >
-                    Place Bid
-                  </button>
-                )}
-              </div>
-            </div>
-            {idx < filteredItems.length - 1 && (
-              <div className={styles["divider"]}></div>
-            )}
-          </div>
+        {filteredItems.map((item) => (
+          <AuctionCard
+            key={item._id}
+            item={item}
+            timeLeft={<TimeLeft endTime={item.endDate} />}
+          />
         ))}
+        {filteredItems.length === 0 && (
+          <div className={styles["empty-state"]}>
+            <h2>No auction items found</h2>
+            <p>Try a different search term.</p>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -1,0 +1,19 @@
+.badge {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.4rem 0.65rem;
+}
+
+.open {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.closed {
+  background: #e5e7eb;
+  color: #374151;
+}

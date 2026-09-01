@@ -1,27 +1,30 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../api";
+import Button from "../components/Button";
+import PriceDisplay from "../components/PriceDisplay";
+import StatusBadge from "../components/StatusBadge";
+import { formatDateTime } from "../utils/formatters";
 import styles from "./ItemDetails.module.css";
 
-// Timer component for auction end
 function TimeLeft({ endDate }) {
-  const [timeLeft, setTimeLeft] = useState('Calculating...');
+  const [timeLeft, setTimeLeft] = useState("Calculating...");
 
   useEffect(() => {
     const updateTimer = () => {
       if (!endDate) {
-        setTimeLeft('No end date set');
+        setTimeLeft("No end date set");
         return;
       }
       const now = new Date().getTime();
       const end = new Date(endDate).getTime();
       const difference = end - now;
       if (isNaN(difference)) {
-        setTimeLeft('Invalid date');
+        setTimeLeft("Invalid date");
         return;
       }
       if (difference <= 0) {
-        setTimeLeft('Auction ended');
+        setTimeLeft("Auction ended");
         return;
       }
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
@@ -35,19 +38,7 @@ function TimeLeft({ endDate }) {
     return () => clearInterval(timer);
   }, [endDate]);
 
-  return (
-    <div className="my-2 p-2 bg-gray-50 rounded text-center">
-      <span className="font-semibold">Time Remaining:</span><br />
-      <span className={`
-        ${timeLeft === 'Auction ended' ? 'text-red-600' : 
-          timeLeft === 'No end date set' || timeLeft === 'Invalid date' ? 'text-gray-600' :
-          'text-blue-600'
-        } font-bold text-lg`}
-      >
-        {timeLeft}
-      </span>
-    </div>
-  );
+  return <>{timeLeft}</>;
 }
 
 export default function ItemDetails() {
@@ -79,22 +70,20 @@ export default function ItemDetails() {
 
     try {
       setLoading(true);
-      const response = await api.post(`/api/items/${id}/bid`, { 
+      const response = await api.post(`/api/items/${id}/bid`, {
         amount: bidAmount,
-        itemId: id // Explicitly include itemId
+        itemId: id
       });
 
       setNewBid("");
       alert("Bid placed successfully!");
 
-      // Update UI with new data
       setItem(prev => ({
         ...prev,
         currentPrice: bidAmount,
         currentBidder: response.data.userEmail
       }));
 
-      // Add new bid to history
       setBids(prev => [...prev, {
         amount: bidAmount,
         userEmail: response.data.userEmail,
@@ -109,9 +98,8 @@ export default function ItemDetails() {
         stack: error.stack
       });
 
-      // Show specific error message
-      const errorMessage = error.response?.data?.message 
-        || error.message 
+      const errorMessage = error.response?.data?.message
+        || error.message
         || "Failed to place bid. Please try again.";
       alert(errorMessage);
 
@@ -120,64 +108,91 @@ export default function ItemDetails() {
     }
   };
 
-  if (!item) return <div>Loading...</div>;
+  if (!item) return <div className={styles.loading}>Loading auction item...</div>;
 
   return (
     <div className={styles["details-bg"]}>
-      <div className={styles["details-card"]}>
-        <h2 className={styles["details-title"]}>{item.title}</h2>
-        <img 
-          src={item.imageUrl || 'https://placehold.co/300x200'} 
-          alt={item.title}
-          className={styles["details-img"]}
-          onError={(e) => {
-            e.target.src = 'https://placehold.co/300x200';
-            e.target.onerror = null;
-          }}
-        />
-        <p className={styles["details-desc"]}>{item.description}</p>
-        <p className={styles["details-status"]}>Status: {item.isClosed ? "Closed" : "Open"}</p>
-        <p className={styles["details-price"]}>Highest Bid: <strong>${highestBid}</strong> {item.currentBidder && `by ${item.currentBidder}`}</p>
-        {/* Timer above the bid form */}
-        <TimeLeft endDate={item.endDate} />
-        {!item.isClosed ? (
-          <form onSubmit={onBidSubmit} className={styles["details-form"]}>
-            <input
-              type="number"
-              step="0.01"
-              min={highestBid + 0.01}
-              value={newBid}
-              onChange={e => setNewBid(e.target.value)}
-              className={styles["details-input"]}
-              required
-              disabled={loading}
-            />
-            <button 
-              type="submit" 
-              className={styles["details-btn"]}
-              disabled={loading}
-            >
-              {loading ? "Placing Bid..." : "Place Bid"}
-            </button>
-          </form>
-        ) : (
-          <p className={styles["details-error"]}>This auction is closed.</p>
-        )}
+      <div className={styles["details-shell"]}>
+        <section className={styles["image-card"]} aria-label={`${item.title} image`}>
+          <img
+            src={item.imageUrl || "https://placehold.co/600x420"}
+            alt={item.title}
+            className={styles["details-img"]}
+            onError={(e) => {
+              e.target.src = "https://placehold.co/600x420";
+              e.target.onerror = null;
+            }}
+          />
+        </section>
 
-        <h3 className={styles["details-history-title"]}>Bid History</h3>
-        <ul className={styles["details-history-list"]}>
-          {bids.map((bid, idx) => (
-            <li key={idx}>
-              <strong>${bid.amount}</strong> – {bid.userEmail} at {new Date(bid.timestamp).toLocaleString()}
-            </li>
-          ))}
-          {bids.length === 0 && <li>No bids yet.</li>}
-        </ul>
+        <section className={styles["details-panel"]}>
+          <div className={styles["title-row"]}>
+            <h1 className={styles["details-title"]}>{item.title}</h1>
+            <StatusBadge isClosed={item.isClosed} />
+          </div>
+          <p className={styles["details-desc"]}>{item.description}</p>
+
+          <dl className={styles["stats-grid"]}>
+            <div>
+              <dt>Highest Bid</dt>
+              <dd><PriceDisplay value={highestBid} /></dd>
+            </div>
+            <div>
+              <dt>Time Remaining</dt>
+              <dd><TimeLeft endDate={item.endDate} /></dd>
+            </div>
+            <div>
+              <dt>Highest Bidder</dt>
+              <dd>{item.currentBidder || "No bids yet"}</dd>
+            </div>
+            <div>
+              <dt>Ends</dt>
+              <dd>{formatDateTime(item.endDate)}</dd>
+            </div>
+          </dl>
+
+          {!item.isClosed ? (
+            <form onSubmit={onBidSubmit} className={styles["details-form"]}>
+              <label className={styles["bid-label"]} htmlFor="bidAmount">Bid amount</label>
+              <div className={styles["bid-row"]}>
+                <input
+                  id="bidAmount"
+                  type="number"
+                  step="0.01"
+                  min={highestBid + 0.01}
+                  value={newBid}
+                  onChange={e => setNewBid(e.target.value)}
+                  className={styles["details-input"]}
+                  placeholder="Enter your bid (USD)"
+                  required
+                  disabled={loading}
+                />
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Placing..." : "Place Bid"}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <p className={styles["details-error"]}>This auction is closed.</p>
+          )}
+
+          <section className={styles["history-section"]}>
+            <h2 className={styles["details-history-title"]}>Bid History</h2>
+            <ul className={styles["details-history-list"]}>
+              {bids.map((bid, idx) => (
+                <li key={idx}>
+                  <strong><PriceDisplay value={bid.amount} /></strong>
+                  <span>{bid.userEmail}</span>
+                  <time dateTime={new Date(bid.timestamp).toISOString()}>
+                    {formatDateTime(bid.timestamp)}
+                  </time>
+                </li>
+              ))}
+              {bids.length === 0 && <li className={styles["empty-history"]}>No bids yet.</li>}
+            </ul>
+          </section>
+        </section>
       </div>
     </div>
   );
 }
-
-
-
-

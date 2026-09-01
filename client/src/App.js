@@ -65,7 +65,7 @@ function App() {
 function PrivateRoute({ children }) {
   const { currentUser, loading } = useAuth();
   
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className="app-loading">Loading...</div>;
   
   return currentUser ? children : <Navigate to="/login" />;
 }
@@ -74,7 +74,7 @@ function PrivateRoute({ children }) {
 function AdminRoute({ children }) {
   const { currentUser, isAdmin, loading } = useAuth();
   
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className="app-loading">Loading...</div>;
   
   return currentUser && isAdmin ? children : <Navigate to="/" />;
 }
