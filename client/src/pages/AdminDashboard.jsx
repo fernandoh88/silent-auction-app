@@ -85,15 +85,6 @@ export default function AdminDashboard() {
       return;
     }
 
-    // Log payload for debugging
-    console.log('Submitting new auction item:', {
-      title: newItem.title,
-      description: newItem.description,
-      imageUrl: newItem.imageUrl,
-      basePrice: parseFloat(newItem.basePrice),
-      endDate: formattedEndDate.toISOString()
-    });
-
     try {
       const response = await api.post('/api/items', {
         title: newItem.title,

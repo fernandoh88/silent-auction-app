@@ -18,10 +18,9 @@ function sendWinnerEmail(to, itemName) {
     subject: `Congratulations! You won the auction for ${itemName}`,
     text: `Dear bidder,\n\nYou have won the auction for "${itemName}". Please check your account for details.\n\nThank you for participating!`,
   };
-  console.log('Attempting to send email:', mailOptions);
   return transporter.sendMail(mailOptions)
     .then(info => {
-      console.log('Email sent:', info);
+      console.log('Winner email sent:', info.messageId);
       return info;
     })
     .catch(error => {
@@ -37,10 +36,9 @@ function sendOutbidEmail(to, itemName, newBidAmount, yourBidAmount) {
     subject: `You've been outbid on ${itemName}`,
     text: `Dear bidder,\n\nYour bid of $${yourBidAmount} on "${itemName}" has been outbid. The new highest bid is $${newBidAmount}.\n\nYou can place a new bid to stay in the running!\n\nThank you for participating!`,
   };
-  console.log('Attempting to send outbid email:', mailOptions);
   return transporter.sendMail(mailOptions)
     .then(info => {
-      console.log('Outbid email sent:', info);
+      console.log('Outbid email sent:', info.messageId);
       return info;
     })
     .catch(error => {

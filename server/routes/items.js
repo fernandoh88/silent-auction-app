@@ -66,12 +66,6 @@ router.get('/:id', async (req, res) => {
 
 // ✅ Place a bid on an item (protected)
 router.post('/:id/bid', verifyToken, async (req, res) => {
-  console.log('Bid attempt:', {
-    itemId: req.params.id,
-    user: req.user,
-    amount: req.body.amount
-  });
-  
   const user = req.user;
   const { id } = req.params;
   const { amount } = req.body;
@@ -190,15 +184,6 @@ router.patch('/:id/close', verifyToken, async (req, res) => {
 // Delete an auction (admin only)
 router.delete('/:id', verifyToken, async (req, res) => {
   try {
-    // Enhanced debug logging
-    console.log('Delete attempt:', {
-      requestEmail: req.user.email,
-      envAdminEmail: process.env.ADMIN_EMAIL,
-      isMatch: req.user.email === process.env.ADMIN_EMAIL,
-      headers: req.headers,
-      userObject: req.user
-    });
-
     // Check if ADMIN_EMAIL is loaded
     if (!process.env.ADMIN_EMAIL) {
       console.error('ADMIN_EMAIL not set in environment');
@@ -208,13 +193,7 @@ router.delete('/:id', verifyToken, async (req, res) => {
     // Case-insensitive comparison
     if (req.user.email.toLowerCase() !== process.env.ADMIN_EMAIL.toLowerCase()) {
       console.log('Unauthorized delete attempt by:', req.user.email);
-      return res.status(403).json({ 
-        message: "Only admin can delete auctions",
-        debug: {
-          userEmail: req.user.email,
-          expectedEmail: process.env.ADMIN_EMAIL
-        }
-      });
+      return res.status(403).json({ message: "Only admin can delete auctions" });
     }
 
     const item = await AuctionItem.findById(req.params.id);

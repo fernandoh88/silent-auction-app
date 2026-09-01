@@ -10,13 +10,32 @@ if (dns.getServers().every((server) => server === '127.0.0.1' || server === '::1
   dns.setServers(['1.1.1.1', '8.8.8.8']);
 }
 
+const productionOrigins = [
+  process.env.CLIENT_URL,
+  ...(process.env.CLIENT_URLS || '').split(','),
+]
+  .map((origin) => origin && origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? productionOrigins
+  : [
+      ...productionOrigins,
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+    ];
+
+if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
+  throw new Error('CLIENT_URL or CLIENT_URLS must be configured in production');
+}
+
 // Log startup configuration
 console.log('Server starting with configuration:', {
   nodeEnv: process.env.NODE_ENV,
   adminEmail: process.env.ADMIN_EMAIL ? 'Set' : 'Missing',
   mongoUri: process.env.MONGO_URI ? 'Set' : 'Missing',
   port: process.env.PORT || 5000,
-  clientUrl: process.env.CLIENT_URL ? 'Set' : 'Using default'
+  allowedOrigins: allowedOrigins.length
 });
 
 const app = express();
@@ -25,11 +44,7 @@ const server = http.createServer(app);
 // Socket.io setup with production settings
 const io = require('socket.io')(server, {
   cors: {
-    origin: [
-      process.env.CLIENT_URL,
-      'https://silentauctionapp-4ca96.web.app',
-      'http://localhost:3000'
-    ],
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PATCH", "DELETE"],
     credentials: true,
     transports: ['websocket', 'polling']
@@ -41,11 +56,7 @@ app.set('socketio', io);
 
 // Enhanced CORS for Render deployment
 app.use(cors({
-  origin: [
-    process.env.CLIENT_URL,
-    'https://silentauctionapp-4ca96.web.app',
-    'http://localhost:3000'
-  ],
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -94,7 +105,7 @@ app.get('/health', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
-  res.status(500).json({ 
+    res.status(500).json({ 
     message: "Internal server error",
     error: process.env.NODE_ENV === 'production' ? null : err.message
   });

@@ -100,7 +100,6 @@ export default function AuctionList() {
   const fetchItems = async () => {
     try {
       const res = await api.get("/api/items");
-      console.log('Fetched items:', res.data); // Debug log
       if (Array.isArray(res.data)) {
         setItems(res.data);
       } else if (Array.isArray(res.data.items)) {

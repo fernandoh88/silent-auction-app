@@ -66,6 +66,7 @@ node_modules/
 .env
 client/.env
 server/.env
+server/config/serviceAccountKey.json
 
 # dataconnect generated files
 .dataconnect

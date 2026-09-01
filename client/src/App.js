@@ -9,8 +9,13 @@ import ItemDetails from "./pages/ItemDetails";
 import AdminDashboard from "./pages/AdminDashboard";
 import Navbar from "./components/Navbar";
 
-// Create socket instance for production
-const socket = io(process.env.REACT_APP_API_URL || 'https://silentauction-3eqm.onrender.com', {
+const apiUrl = process.env.REACT_APP_API_URL;
+
+if (process.env.NODE_ENV === 'production' && !apiUrl) {
+  throw new Error('REACT_APP_API_URL must be configured for production builds');
+}
+
+const socket = io(apiUrl || 'http://localhost:5000', {
   withCredentials: true,
   transports: ['websocket', 'polling']
 });
