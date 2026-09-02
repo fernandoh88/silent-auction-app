@@ -9,13 +9,14 @@ import ItemDetails from "./pages/ItemDetails";
 import AdminDashboard from "./pages/AdminDashboard";
 import Navbar from "./components/Navbar";
 
-const apiUrl = process.env.REACT_APP_API_URL;
+const configuredApiUrl = process.env.REACT_APP_API_URL;
+const apiUrl = configuredApiUrl || (process.env.NODE_ENV !== 'production' ? 'http://localhost:5000' : undefined);
 
-if (process.env.NODE_ENV === 'production' && !apiUrl) {
+if (!apiUrl) {
   throw new Error('REACT_APP_API_URL must be configured for production builds');
 }
 
-const socket = io(apiUrl || 'http://localhost:5000', {
+const socket = io(apiUrl, {
   withCredentials: true,
   transports: ['websocket', 'polling']
 });
