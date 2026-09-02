@@ -66,8 +66,9 @@ export default function Login() {
             <div className={styles["auth-error"]}>{error}</div>
           )}
           <div style={{ marginBottom: '1.2rem' }}>
-            <label className={styles["auth-label"]}>Email</label>
+            <label className={styles["auth-label"]} htmlFor="email">Email</label>
             <input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -77,8 +78,9 @@ export default function Login() {
             />
           </div>
           <div style={{ marginBottom: '1.2rem' }}>
-            <label className={styles["auth-label"]}>Password</label>
+            <label className={styles["auth-label"]} htmlFor="password">Password</label>
             <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

@@ -1,191 +1,171 @@
-# Silent Auction App
+# Silent Auction Platform
 
-Full-stack silent auction platform built with **React**, **Node/Express**, **MongoDB**, **Firebase Authentication**, and **Socket.IO**.  
-Users can browse items, place bids in real time, and view bid history.  
-Admins can create, close, and delete auctions, with automatic winner emails and outbid notifications.
+[![CI](https://github.com/fernandoh88/silent-auction-app/actions/workflows/ci.yml/badge.svg)](https://github.com/fernandoh88/silent-auction-app/actions/workflows/ci.yml)
+[![Publish Backend Docker Image](https://github.com/fernandoh88/silent-auction-app/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/fernandoh88/silent-auction-app/actions/workflows/docker-publish.yml)
+[![Deploy Frontend To Firebase Hosting](https://github.com/fernandoh88/silent-auction-app/actions/workflows/firebase-hosting.yml/badge.svg)](https://github.com/fernandoh88/silent-auction-app/actions/workflows/firebase-hosting.yml)
 
----
+Real-time full-stack auction platform built with React, Express, MongoDB, Firebase Authentication, and Socket.IO. The project is configured for local Docker Compose usage, automated tests, GitHub Actions CI, GHCR image publishing, Firebase Hosting, and Render backend deployment.
 
-## Table of Contents
-- [Architecture](#architecture)
-- [Front-End Component Map](#front-end-component-map)
-- [Features](#features)
-- [API Endpoints](#api-endpoints)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-  - [Environment Variables](#environment-variables)
-  - [Install & Run](#install--run)
-- [Security](#security)
-- [Real-Time Events](#real-time-events)
-- [Email Notifications](#email-notifications)
+## Features
 
----
+- Firebase email/password authentication.
+- Protected auction browsing and bidding.
+- Admin-only auction creation, closing, and deletion.
+- MongoDB-backed auction items and bid history.
+- Real-time bid and auction-close events with Socket.IO.
+- Winner and outbid email notifications through Nodemailer.
+- Health endpoint at `/health` for Render, Docker, and uptime checks.
 
 ## Architecture
 
-```
-[ React Client (client/) ]              [ Node/Express API (server/) ]
- ├─ Pages & Components                   ├─ Routes (routes/items.js)
- ├─ Auth (Firebase Auth) ──JWT─────────▶ ├─ Middleware (verifyToken)
- ├─ Axios (api.js) ────────REST────────▶ ├─ Controllers/Handlers
- └─ Socket.IO client ◀──WebSocket──────▶ ├─ Socket.IO server
-                                         ├─ Models (AuctionItem, Bid)
-                                         └─ MongoDB (Mongoose)
-```
-
-**Key points:**
-- **ID token verification:** `verifyToken` middleware uses Firebase Admin SDK to verify Firebase ID tokens.
-- **Auto-close auctions:** `GET /api/items` checks `endDate` and closes expired auctions, determines winners, sends email, and emits `auctionEnded`.
-
----
-
-## Front-End Component Map
-
-**Routes (React Router)**
-
-```
-<App>
- └─ <AuthProvider>
-     └─ <Router>
-         ├─ "/login"        → <Login />
-         ├─ "/register"     → <Register />
-         ├─ "/"             → <PrivateRoute>
-         │                     └─ <Navbar /> + <AuctionList /> + <TimeLeft />
-         ├─ "/item/:id"     → <PrivateRoute>
-         │                     └─ <Navbar /> + <ItemDetails /> + <TimeLeft />
-         └─ "/admin"        → <AdminRoute>
-                               └─ <Navbar /> + <AdminDashboard />
+```mermaid
+flowchart LR
+  Browser[React Client] -->|Firebase Auth| FirebaseAuth[Firebase Authentication]
+  Browser -->|HTTP API with Firebase ID token| API[Express API]
+  Browser <-->|Socket.IO| API
+  API -->|Verify ID token| FirebaseAdmin[Firebase Admin SDK]
+  API -->|Mongoose| Mongo[(MongoDB Atlas / Docker MongoDB)]
+  API -->|SMTP| Mail[Nodemailer SMTP Provider]
+  BrowserDeploy[Firebase Hosting] --> Browser
+  Render[Render Docker Service] --> API
+  GHCR[GitHub Container Registry] --> Render
 ```
 
-**Page responsibilities:**
-- **Login:** Firebase email/password sign-in; redirects based on `isAdmin`.
-- **Register:** Create account and set `displayName`.
-- **AuctionList:** Fetch items, search, countdown timers, subscribe to `auctionEnded` / `bidUpdate`.
-- **ItemDetails:** Fetch item & bid history; bid via `POST /api/items/:id/bid`.
-- **AdminDashboard:** Create, close, and delete auctions.
+## Tech Stack
 
----
+Frontend: React, Create React App, React Router, Axios, Socket.IO Client, Testing Library.
 
-## Features
-- Firebase Authentication (ID token via Axios interceptor).
-- Real-time bidding with Socket.IO (`bidUpdate`, `auctionEnded`).
-- Email notifications with Nodemailer:
-  - **Winner email** when auction closes.
-  - **Outbid email** when highest bid changes.
-- Auto-close expired auctions.
-- Component-scoped CSS for clean styling.
+Backend: Node.js, Express, Mongoose, Firebase Admin SDK, Socket.IO, Nodemailer.
 
----
+Database: MongoDB Atlas in production, MongoDB Docker container for local Compose.
 
-## API Endpoints
+Authentication: Firebase Authentication on the client, Firebase Admin token verification on the API.
 
-**Public**
-- `GET /api/items` – List items (auto-close expired auctions).
-- `GET /api/items/:id` – Get item details + bid history.
+Real-time communication: Socket.IO WebSocket and polling transports.
 
-**Protected** (requires `Authorization: Bearer <Firebase ID token>`)
-- `POST /api/items/:id/bid` – Place a bid.
-- `PATCH /api/items/:id/close` – Admin only; close auction and send winner email.
-- `DELETE /api/items/:id` – Admin only; delete item and bids.
-- `POST /api/items` – Admin only; create new item.
+DevOps: Docker, Docker Compose, GitHub Actions, GitHub Container Registry, Render, Firebase Hosting.
 
----
+Testing: Jest, Supertest, React Testing Library.
 
-## Project Structure
+Deployment: Firebase Hosting for static frontend, Render Docker service for backend, MongoDB Atlas for production data.
 
-```
-client/                     # React frontend
-  ├─ src/
-  │   ├─ api.js              # Axios with Firebase token
-  │   ├─ firebase.js         # Firebase client init
-  │   ├─ contexts/AuthContext.js
-  │   ├─ components/Navbar.jsx
-  │   ├─ pages/
-  │   │   ├─ Login.jsx
-  │   │   ├─ Register.jsx
-  │   │   ├─ AuctionList.jsx
-  │   │   ├─ ItemDetails.jsx
-  │   │   └─ AdminDashboard.jsx
-  │   ├─ App.js
-  │   └─ index.js
+## Local Development
 
-server/                     # Node/Express backend
-  ├─ models/
-  │   ├─ AuctionItem.js
-  │   └─ Bid.js
-  ├─ routes/items.js
-  ├─ middlewares/verifyToken.js
-  ├─ utils/email.js
-  ├─ app.js
-  └─ package.json
-```
+Backend:
 
----
-
-## Getting Started
-
-### Environment Variables
-
-**server/.env**
-```ini
-PORT=5000
-MONGO_URI=<your-mongodb-uri>
-ADMIN_EMAIL=<admin@example.com>
-CLIENT_URL=http://localhost:3000
-SMTP_HOST=<smtp-host>
-SMTP_PORT=587
-SMTP_USER=<smtp-username>
-SMTP_PASS=<smtp-password>
-FROM_EMAIL="Auction App" <no-reply@auction.com>
-```
-
-**client/.env**
-```ini
-REACT_APP_FIREBASE_API_KEY=<firebase-key>
-REACT_APP_FIREBASE_AUTH_DOMAIN=<firebase-auth-domain>
-REACT_APP_FIREBASE_PROJECT_ID=<firebase-project-id>
-REACT_APP_FIREBASE_STORAGE_BUCKET=<firebase-storage-bucket>
-REACT_APP_FIREBASE_MESSAGING_SENDER_ID=<firebase-messaging-sender-id>
-REACT_APP_FIREBASE_APP_ID=<firebase-app-id>
-REACT_APP_API_URL=http://localhost:5000
-```
-
----
-
-### Install & Run
-
-**Backend**
 ```bash
 cd server
-npm install
+npm ci
+cp .env.example .env
 npm start
 ```
 
-**Frontend**
+Frontend:
+
 ```bash
 cd client
-npm install
+npm ci
+cp .env.example .env
 npm start
 ```
 
----
+The client defaults to `http://localhost:5000` for API and Socket.IO traffic when `REACT_APP_API_URL` is not set. Production builds must set `REACT_APP_API_URL`.
+
+## Docker
+
+Run the local stack:
+
+```bash
+docker compose up --build
+```
+
+Services:
+
+- `frontend`: nginx serving the React production build on `http://localhost:8080`.
+- `backend`: Express and Socket.IO API on `http://localhost:5000`.
+- `mongodb`: local MongoDB with persistent `mongodb_data` volume.
+
+Docker Compose reads non-secret defaults from `docker-compose.yml` and supports environment variable overrides from your shell or a root `.env` file. Do not commit `.env` files. For authenticated flows in Docker, provide Firebase Admin credentials through environment variables.
+
+## Environment Variables
+
+Client variables are documented in `client/.env.example`:
+
+- `REACT_APP_API_URL`
+- `REACT_APP_ADMIN_EMAIL`
+- `REACT_APP_FIREBASE_API_KEY`
+- `REACT_APP_FIREBASE_AUTH_DOMAIN`
+- `REACT_APP_FIREBASE_PROJECT_ID`
+- `REACT_APP_FIREBASE_STORAGE_BUCKET`
+- `REACT_APP_FIREBASE_MESSAGING_SENDER_ID`
+- `REACT_APP_FIREBASE_APP_ID`
+
+Server variables are documented in `server/.env.example`:
+
+- `NODE_ENV`
+- `PORT`
+- `MONGO_URI`
+- `CLIENT_URL`
+- `CLIENT_URLS`
+- `ADMIN_EMAIL`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `FROM_EMAIL`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY`
+- `FIREBASE_SERVICE_ACCOUNT_JSON`
+
+For Firebase Admin in production, prefer either `FIREBASE_SERVICE_ACCOUNT_JSON` or the discrete `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` variables. Escaped `\n` sequences in `FIREBASE_PRIVATE_KEY` are normalized by the server.
+
+## Testing
+
+Backend:
+
+```bash
+cd server
+npm test
+```
+
+Frontend:
+
+```bash
+cd client
+npm test
+npm run build
+```
+
+Backend tests mock Firebase Admin, email delivery, and database models. They do not send email or connect to production MongoDB.
+
+## CI/CD
+
+```mermaid
+flowchart TD
+  PR[Pull Request] --> CI[CI: backend tests, frontend tests/build, Docker builds]
+  Push[Push to main] --> CI
+  CI --> Firebase[Firebase Hosting deploy after CI success on main]
+  Push --> GHCR[Build, scan, and publish backend image to GHCR]
+  GHCR --> Render[Trigger Render deploy hook]
+  Tags[Version tag v*.*.*] --> GHCR
+```
+
+Pull requests run validation only. Pushes to `main` run CI, publish the backend Docker image to GitHub Container Registry, trigger Render when `RENDER_DEPLOY_HOOK_URL` is configured, and deploy the frontend to Firebase Hosting after CI succeeds.
+
+## Deployment
+
+Frontend: Firebase Hosting serves `client/build`. The production workflow uses `FIREBASE_SERVICE_ACCOUNT` and `FIREBASE_PROJECT_ID` GitHub Secrets.
+
+Backend: Render should run the Docker image published to `ghcr.io/<github-owner>/silent-auction-server`. Configure Render environment variables from `server/.env.example`, set the service port to `5000` or use Render's `PORT`, and set the health check path to `/health`.
+
+Database: Use MongoDB Atlas for production. Docker Compose uses the local `mongodb` service only for local development and production-like testing.
 
 ## Security
-- **Auth boundary:** All routes except `/login` and `/register` are protected.
-- **AdminRoute:** Restricts `/admin` to `isAdmin` users (email match with `ADMIN_EMAIL`).
-- **Server-side checks:** Validates bid amount > current price, future end date, and token validity.
 
----
-
-## Real-Time Events
-- `bidUpdate`: Broadcast when a new highest bid is placed.
-- `auctionEnded`: Broadcast when an auction ends (auto or admin).
-
----
-
-## Email Notifications
-- **Winner email** – sent when auction closes.
-- **Outbid email** – sent to previous highest bidder.
-- Powered by Nodemailer with SMTP configuration.
-
-
+- `.env`, `.env.*`, service-account JSON files, build outputs, dependencies, and coverage output are ignored by Git.
+- Docker images exclude local env files and Firebase service-account files through `.dockerignore`.
+- The backend Docker image installs production dependencies only and runs as the non-root `node` user.
+- Firebase Admin credentials are loaded from environment variables in production.
+- Dependabot monitors npm dependencies and GitHub Actions.
+- The backend image publishing workflow scans the production image with Trivy before pushing.

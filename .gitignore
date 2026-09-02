@@ -64,9 +64,26 @@ node_modules/
 
 # dotenv environment variables file
 .env
+*.env
+.env.*
+!.env.example
 client/.env
+client/.env.*
+!client/.env.example
 server/.env
+server/.env.*
+!server/.env.example
 server/config/serviceAccountKey.json
+serviceAccountKey.json
+*serviceAccount*.json
+*firebase*service*account*.json
+firebase-service-account*.json
+
+# Build output
+build
+dist
+client/build
+server/coverage
 
 # dataconnect generated files
 .dataconnect

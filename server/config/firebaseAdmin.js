@@ -50,10 +50,18 @@ function getServiceAccount() {
   throw new Error('Firebase Admin credentials are not configured');
 }
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(getServiceAccount()),
-  });
+function getAdminAuth() {
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      credential: admin.credential.cert(getServiceAccount()),
+    });
+  }
+
+  return admin.auth();
 }
 
-module.exports = admin.auth();
+module.exports = {
+  verifyIdToken(token) {
+    return getAdminAuth().verifyIdToken(token);
+  },
+};
