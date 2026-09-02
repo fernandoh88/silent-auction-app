@@ -6,6 +6,13 @@
 
 Real-time full-stack auction platform built with React, Express, MongoDB, Firebase Authentication, and Socket.IO. The project is configured for local Docker Compose usage, automated tests, GitHub Actions CI, GHCR image publishing, Firebase Hosting, and Render backend deployment.
 
+## Production
+
+- Live demo: https://silentauctionapp-4ca96.web.app
+- Backend health: https://silentauction-3eqm.onrender.com/health
+- Backend API base URL: https://silentauction-3eqm.onrender.com
+- Backend container image: `ghcr.io/fernandoh88/silent-auction-server:latest`
+
 ## Features
 
 - Firebase email/password authentication.
