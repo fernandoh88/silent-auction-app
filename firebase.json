@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "silentauctionapp-4ca96",
     "public": "client/build",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
