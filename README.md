@@ -1,131 +1,204 @@
-# Silent Auction Platform
+# Silent Auction App
 
 [![CI](https://github.com/fernandoh88/silent-auction-app/actions/workflows/ci.yml/badge.svg)](https://github.com/fernandoh88/silent-auction-app/actions/workflows/ci.yml)
-[![Publish Backend Docker Image](https://github.com/fernandoh88/silent-auction-app/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/fernandoh88/silent-auction-app/actions/workflows/docker-publish.yml)
+[![Publish Server Docker Image](https://github.com/fernandoh88/silent-auction-app/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/fernandoh88/silent-auction-app/actions/workflows/docker-publish.yml)
 [![Deploy Frontend To Firebase Hosting](https://github.com/fernandoh88/silent-auction-app/actions/workflows/firebase-hosting.yml/badge.svg)](https://github.com/fernandoh88/silent-auction-app/actions/workflows/firebase-hosting.yml)
 
-Real-time full-stack auction platform built with React, Express, MongoDB, Firebase Authentication, and Socket.IO. The project is configured for local Docker Compose usage, automated tests, GitHub Actions CI, GHCR image publishing, Firebase Hosting, and Render backend deployment.
-
-## Production
-
-- Live demo: https://silentauctionapp-4ca96.web.app
-- Backend health: https://silentauction-3eqm.onrender.com/health
-- Backend API base URL: https://silentauction-3eqm.onrender.com
-- Backend container image: `ghcr.io/fernandoh88/silent-auction-server:latest`
+Silent Auction App is a full-stack silent auction application built with React, Node.js/Express, MongoDB, Firebase Authentication, Socket.IO, and Docker. It supports authenticated auction browsing, real-time bidding, auction closing, winner notifications, and production health checks.
 
 ## Features
 
-- Firebase email/password authentication.
-- Protected auction browsing and bidding.
-- Admin-only auction creation, closing, and deletion.
-- MongoDB-backed auction items and bid history.
-- Real-time bid and auction-close events with Socket.IO.
-- Winner and outbid email notifications through Nodemailer.
-- Health endpoint at `/health` for Render, Docker, and uptime checks.
-
-## Architecture
-
-```mermaid
-flowchart LR
-  Browser[React Client] -->|Firebase Auth| FirebaseAuth[Firebase Authentication]
-  Browser -->|HTTP API with Firebase ID token| API[Express API]
-  Browser <-->|Socket.IO| API
-  API -->|Verify ID token| FirebaseAdmin[Firebase Admin SDK]
-  API -->|Mongoose| Mongo[(MongoDB Atlas / Docker MongoDB)]
-  API -->|SMTP| Mail[Nodemailer SMTP Provider]
-  BrowserDeploy[Firebase Hosting] --> Browser
-  Render[Render Docker Service] --> API
-  GHCR[GitHub Container Registry] --> Render
-```
+- User authentication with Firebase.
+- Auction item listings.
+- Real-time bidding with Socket.IO.
+- REST API for auction item, bid, close, create, and delete operations.
+- Auction closing functionality.
+- Winner notifications and email functionality with Nodemailer.
+- MongoDB persistence through Mongoose.
+- Production health endpoint at `/health`.
 
 ## Tech Stack
 
-Frontend: React, Create React App, React Router, Axios, Socket.IO Client, Testing Library.
-
-Backend: Node.js, Express, Mongoose, Firebase Admin SDK, Socket.IO, Nodemailer.
-
-Database: MongoDB Atlas in production, MongoDB Docker container for local Compose.
-
-Authentication: Firebase Authentication on the client, Firebase Admin token verification on the API.
-
-Real-time communication: Socket.IO WebSocket and polling transports.
-
-DevOps: Docker, Docker Compose, GitHub Actions, GitHub Container Registry, Render, Firebase Hosting.
-
-Testing: Jest, Supertest, React Testing Library.
-
-Deployment: Firebase Hosting for static frontend, Render Docker service for backend, MongoDB Atlas for production data.
-
-## Local Development
+Frontend:
+- React
+- Create React App
+- React Router
+- Axios
+- Socket.IO Client
+- Testing Library
+- Nginx for the production frontend container
 
 Backend:
+- Node.js
+- Express
+- Mongoose
+- Firebase Admin SDK
+- Socket.IO
+- Nodemailer
+- Jest
+- Supertest
 
-```bash
-cd server
-npm ci
-cp .env.example .env
-npm start
+Database:
+- MongoDB
+
+Authentication:
+- Firebase Authentication
+- Firebase Admin token verification
+
+Real-time communication:
+- Socket.IO
+
+Infrastructure / DevOps:
+- Docker
+- Docker Compose
+- GitHub Actions
+- GitHub Container Registry
+- Firebase Hosting
+- Render
+
+## Architecture
+
+The React frontend talks to the Express backend through REST API requests and Socket.IO events. Firebase Authentication handles user sign-in on the frontend, and the backend verifies Firebase ID tokens with the Firebase Admin SDK for protected actions.
+
+```text
+React frontend -> REST API / Socket.IO -> Express backend -> MongoDB
+                         |
+                         -> Firebase Admin token verification
 ```
-
-Frontend:
-
-```bash
-cd client
-npm ci
-cp .env.example .env
-npm start
-```
-
-The client defaults to `http://localhost:5000` for API and Socket.IO traffic when `REACT_APP_API_URL` is not set. Production builds must set `REACT_APP_API_URL`.
 
 ## Docker
 
-Run the local stack:
+The backend is containerized with Docker and can be built from the repository root:
+
+```bash
+docker build -f server/Dockerfile -t silent-auction-server ./server
+```
+
+The published backend image is available from GitHub Container Registry:
+
+```text
+ghcr.io/fernandoh88/silent-auction-server:latest
+```
+
+Run the published image with environment variables from a local env file. Do not commit real `.env` files or secrets.
+
+```bash
+docker run --rm \
+  --name silent-auction-server \
+  --env-file ./server/.env \
+  -p 5001:5000 \
+  ghcr.io/fernandoh88/silent-auction-server:latest
+```
+
+The repository also includes `docker-compose.yml` for running MongoDB, the backend, and the production frontend container together:
 
 ```bash
 docker compose up --build
 ```
 
-Services:
+## GitHub Container Registry
 
-- `frontend`: nginx serving the React production build on `http://localhost:8080`.
-- `backend`: Express and Socket.IO API on `http://localhost:5000`.
-- `mongodb`: local MongoDB with persistent `mongodb_data` volume.
+GitHub Actions automatically builds and publishes the backend Docker image to GHCR when changes are pushed to `main` under `server/**` or `.github/workflows/docker-publish.yml`.
 
-Docker Compose reads non-secret defaults from `docker-compose.yml` and supports environment variable overrides from your shell or a root `.env` file. Do not commit `.env` files. For authenticated flows in Docker, provide Firebase Admin credentials through environment variables.
+Published image:
 
-## Environment Variables
+```text
+ghcr.io/fernandoh88/silent-auction-server:latest
+```
 
-Client variables are documented in `client/.env.example`:
+Image tags:
+- `latest`
+- Commit SHA, for example `ghcr.io/fernandoh88/silent-auction-server:<commit-sha>`
 
-- `REACT_APP_API_URL`
-- `REACT_APP_ADMIN_EMAIL`
-- `REACT_APP_FIREBASE_API_KEY`
-- `REACT_APP_FIREBASE_AUTH_DOMAIN`
-- `REACT_APP_FIREBASE_PROJECT_ID`
-- `REACT_APP_FIREBASE_STORAGE_BUCKET`
-- `REACT_APP_FIREBASE_MESSAGING_SENDER_ID`
-- `REACT_APP_FIREBASE_APP_ID`
+## CI/CD
 
-Server variables are documented in `server/.env.example`:
+Current workflows:
 
-- `NODE_ENV`
-- `PORT`
-- `MONGO_URI`
-- `CLIENT_URL`
-- `CLIENT_URLS`
-- `ADMIN_EMAIL`
-- `SMTP_HOST`
-- `SMTP_PORT`
-- `SMTP_USER`
-- `SMTP_PASS`
-- `FROM_EMAIL`
-- `FIREBASE_PROJECT_ID`
-- `FIREBASE_CLIENT_EMAIL`
-- `FIREBASE_PRIVATE_KEY`
-- `FIREBASE_SERVICE_ACCOUNT_JSON`
+- `ci.yml`: runs on pull requests and pushes to `main`; installs dependencies, runs backend tests, runs frontend tests, builds the frontend, and validates backend/frontend Docker builds.
+- `docker-publish.yml`: runs on pushes to `main` that affect backend Docker publishing files, plus manual `workflow_dispatch`; logs in to GHCR with `GITHUB_TOKEN`, builds from `./server`, and publishes `latest` plus the commit SHA tag.
+- `firebase-hosting.yml`: runs after a successful `CI` workflow on `main`, plus manual `workflow_dispatch`; builds the frontend and deploys `client/build` to Firebase Hosting.
 
-For Firebase Admin in production, prefer either `FIREBASE_SERVICE_ACCOUNT_JSON` or the discrete `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` variables. Escaped `\n` sequences in `FIREBASE_PRIVATE_KEY` are normalized by the server.
+## Deployment
+
+Frontend:
+
+```text
+https://silentauctionapp-4ca96.web.app
+```
+
+Backend:
+
+```text
+https://silentauction-3eqm.onrender.com
+```
+
+Firebase Hosting is configured by `firebase.json` and `.firebaserc`. The backend deployment uses the published Docker image and should be configured with production environment variables from `server/.env.example`.
+
+## Health Check
+
+Endpoint:
+
+```http
+GET /health
+```
+
+Local example:
+
+```bash
+curl http://localhost:5001/health
+```
+
+Expected response format:
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "...",
+  "env": "production"
+}
+```
+
+## Local Development
+
+Clone the repository:
+
+```bash
+git clone https://github.com/fernandoh88/silent-auction-app.git
+cd silent-auction-app
+```
+
+Install dependencies:
+
+```bash
+cd server
+npm ci
+
+cd ../client
+npm ci
+```
+
+Configure environment variables:
+
+```bash
+cp server/.env.example server/.env
+cp client/.env.example client/.env
+```
+
+Update the local `.env` files with your MongoDB, Firebase, SMTP, and frontend API settings. Do not commit real secrets.
+
+Start the backend:
+
+```bash
+cd server
+npm start
+```
+
+Start the frontend in another terminal:
+
+```bash
+cd client
+npm start
+```
 
 ## Testing
 
@@ -144,35 +217,43 @@ npm test
 npm run build
 ```
 
-Backend tests mock Firebase Admin, email delivery, and database models. They do not send email or connect to production MongoDB.
+## Project Structure
 
-## CI/CD
-
-```mermaid
-flowchart TD
-  PR[Pull Request] --> CI[CI: backend tests, frontend tests/build, Docker builds]
-  Push[Push to main] --> CI
-  CI --> Firebase[Firebase Hosting deploy after CI success on main]
-  Push --> GHCR[Build, scan, and publish backend image to GHCR]
-  GHCR --> Render[Trigger Render deploy hook]
-  Tags[Version tag v*.*.*] --> GHCR
+```text
+.
+|-- .github/workflows/
+|   |-- ci.yml
+|   |-- docker-publish.yml
+|   `-- firebase-hosting.yml
+|-- client/
+|   |-- Dockerfile
+|   |-- nginx.conf
+|   |-- package.json
+|   `-- src/
+|-- server/
+|   |-- Dockerfile
+|   |-- app.js
+|   |-- package.json
+|   |-- config/
+|   |-- middlewares/
+|   |-- models/
+|   |-- routes/
+|   |-- tests/
+|   `-- utils/
+|-- docker-compose.yml
+|-- firebase.json
+`-- README.md
 ```
 
-Pull requests run validation only. Pushes to `main` run CI, publish the backend Docker image to GitHub Container Registry, trigger Render when `RENDER_DEPLOY_HOOK_URL` is configured, and deploy the frontend to Firebase Hosting after CI succeeds.
+## Portfolio / Author
 
-## Deployment
+Fernando Henrique da Silva Machado
 
-Frontend: Firebase Hosting serves `client/build`. The production workflow uses `FIREBASE_SERVICE_ACCOUNT` and `FIREBASE_PROJECT_ID` GitHub Secrets.
+Portfolio:
+https://fernando-portfolio-pi.vercel.app/
 
-Backend: Render should run the Docker image published to `ghcr.io/<github-owner>/silent-auction-server`. Configure Render environment variables from `server/.env.example`, set the service port to `5000` or use Render's `PORT`, and set the health check path to `/health`.
+GitHub:
+https://github.com/fernandoh88
 
-Database: Use MongoDB Atlas for production. Docker Compose uses the local `mongodb` service only for local development and production-like testing.
-
-## Security
-
-- `.env`, `.env.*`, service-account JSON files, build outputs, dependencies, and coverage output are ignored by Git.
-- Docker images exclude local env files and Firebase service-account files through `.dockerignore`.
-- The backend Docker image installs production dependencies only and runs as the non-root `node` user.
-- Firebase Admin credentials are loaded from environment variables in production.
-- Dependabot monitors npm dependencies and GitHub Actions.
-- The backend image publishing workflow scans the production image with Trivy before pushing.
+LinkedIn:
+https://www.linkedin.com/in/fernando-machado8/
